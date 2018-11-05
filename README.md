@@ -393,6 +393,69 @@ The `~I` sigil is used to provide a simple string representation for the
 IRI struct. We can access the IRI string by using the `value` field of
 the struct.
 
+Now, there is a simpler way to do this. Instead of explicitly listing
+out all the terms we can just point at a vocabulary schema file and
+`RDF.ex` will determine which terms to include for us. The schema file
+`dc.ttl` is read from the standard location `priv/vocabs/`. We just need
+to add this path to the project and add in the schema file itself.
+(Note that other RDF serializations could also have been used.)
+
+```elixir
+defmodule TestVocab do
+  @moduledoc """
+  Test module used in "Early steps in Elixir and RDF"
+  """
+
+  use RDF.Vocabulary.Namespace
+
+  defvocab DC,
+    base_iri: "http://purl.org/dc/elements/1.1/",
+    file: "dc.ttl"
+end
+```
+
+```bash
+mkdir -p priv/vocabs/
+mkdir -p priv/data
+
+touch priv/vocabs/dc.ttl
+touch priv/vocabs/bibo.ttl
+touch priv/data/978-1-68050-252-7.ttl
+```
+
+Well first let's make things easier by adding a `.iex.exs` hidden
+file for IEx configuration on startup which imports functions from
+our project `TestVocab`, imports some basic building block functions
+(`iri/1`, `literal/1`, `literal/2`, `triple/3`) from the `RDF` module,
+and also adds an alias for the builtin XSD namespace so we can use the
+unqualified namespace form `XSD.*`, as well as our vocabulary namespaces
+so we can use the unqualified namespace forms `BIBO.*`, `DC.*`, etc.
+(By the way,  functions tend to be identified using a `name/arity` form,
+where `arity` is the number of arguments a function takes.)
+
+```elixir
+# .iex.exs
+import TestVocab
+import RDF, only: [iri: 1, literal: 1, literal: 2, triple: 3]
+
+alias RDF.NS.{XSD}
+alias TestVocab.{DC, BIBO, DCTERMS, EVENT, FOAF, PRISM, SCHEMA, STATUS}
+```
+
+We can also check out the namespace using the private fields
+`__base_iri__` and `__terms__` which echo the keywords `base_iri `
+and `terms` used in creating the vocabulary term.
+
+```bash
+iex> DC.__base_iri__
+#=> "http://purl.org/dc/elements/1.1/"
+
+iex> DC.__terms__
+#=> [:contributor, :coverage, :creator, :date, :description,
+     :format, :identifier, :language, :publisher, :relation,
+     :rights, :source, :subject, :title, :type]
+```
+
 ### 5 November 2018 by Oleg G.Kapranov
 
 [1]: https://www.w3.org/TR/rdf11-primer/
