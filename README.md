@@ -589,6 +589,125 @@ iex> RDF.iri(BIBO.Book)
 iex> i BIBO.Book
 ```
 
+## Use the vocabularies to build RDF statements
+
+So, let's put this to use now and build some RDF statements. And what
+better subject to use than the recent book 'Adopting Elixir' by Ben
+Marx, José Valim, and Bruce Tate.
+
+Following the simple example given for a book resource in the BIBO
+ontology we aim to provide a very basic RDF description for this
+bibliographic item as recorded in the file `978–1–68050–252–7.ttl`.
+
+```bash
+# priv/data/978-1-68050-252-7.ttl
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<urn:isbn:978-1-68050-252-7> a bibo:Book ;
+    dc:creator <https://twitter.com/bgmarx> ;
+    dc:creator <https://twitter.com/josevalim> ;
+    dc:creator <https://twitter.com/redrapids> ;
+    dc:date "2018-03-14"^^xsd:date ;
+    dc:format "Paper" ;
+    dc:publisher <https://pragprog.com/> ;
+    dc:title "Adopting Elixir"@en .
+```
+
+Now how can we generate this RDF description in Elixir?
+
+We're going to show two ways:
+
+1. a rather basic version building on explicit RDF triples, and
+2. a more natural Elixir style using piped function calls and
+   `RDF.Sigils` for RDF terms.
+
+## Long form with explicit RDF triples
+
+Let's define a subject for our RDF triples.
+
+```bash
+iex> s = iri("urn:isbn:978-1-68050-252-7")
+#=> ~I<urn:isbn:978-1-68050-252-7>
+```
+
+And now let's create those RDF triples.  These are implemented in
+`RDF.ex` as regular Elixir tuples, i.e. `{s, p, o}`. Now we've already
+defined our subject `s`, we're using the new vocabulary terms for our
+predicates `p`, and we use either the functions `iri/1`, or `literal/1`
+to generate our objects `o`. There is an exception with the `DC.date`
+and `DC.title` objects where we instead use a `literal/2` function to
+generate a literal with datatype and language tag, respectively.
+
+```bash
+iex> t0 =  {s, RDF.type, iri(BIBO.Book)}
+#=> {~I<urn:isbn:978-1-68050-252-7>,
+     ~I<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>,
+     ~I<http://purl.org/ontology/bibo/Book>}
+
+iex> t1 = {s, DC.creator, iri("https://twitter.com/bgmarx")}
+#=> {~I<urn:isbn:978-1-68050-252-7>,
+     ~I<http://purl.org/dc/elements/1.1/creator>,
+     ~I<https://twitter.com/bgmarx>}
+
+iex> t2 = {s, DC.creator, iri("https://twitter.com/josevalim")}
+#=> {~I<urn:isbn:978-1-68050-252-7>,
+     ~I<http://purl.org/dc/elements/1.1/creator>,
+     ~I<https://twitter.com/josevalim>}
+
+iex> t3 = {s, DC.creator, iri("https://twitter.com/redrapids")}
+#=> {~I<urn:isbn:978-1-68050-252-7>,
+     ~I<http://purl.org/dc/elements/1.1/creator>,
+     ~I<https://twitter.com/redrapids>}
+
+iex> t4 = {s, DC.date, literal("2018-03-14", datatype: XSD.date)}
+#=> {~I<urn:isbn:978-1-68050-252-7>,
+     ~I<http://purl.org/dc/elements/1.1/date>,
+     %RDF.Literal{value: ~D[2018-03-14],
+     datatype: ~I<http://www.w3.org/2001/XMLSchema#date>}}
+
+iex> t5 = {s, DC.format, literal("Paper")}
+#=> {~I<urn:isbn:978-1-68050-252-7>,
+     ~I<http://purl.org/dc/elements/1.1/format>,
+     ~L"Paper"}
+
+iex> t6 = {s, DC.publisher, iri("https://pragprog.com/")}
+#=> {~I<urn:isbn:978-1-68050-252-7>,
+     ~I<http://purl.org/dc/elements/1.1/publisher>,
+     ~I<https://pragprog.com/>}
+
+iex> t7 = {s, DC.title, literal("Adopting Elixir", language: "en")}
+#=> {~I<urn:isbn:978-1-68050-252-7>,
+     ~I<http://purl.org/dc/elements/1.1/title>,
+     ~L"Adopting Elixir"en}
+```
+
+And finally we assemble those triples into an RDF description. Here we
+just scoop them up and pass them as a list to the `RDF.Description`
+constructor.
+
+```bash
+iex> RDF.Description.new [t0, t1, t2, t3, t4, t5, t6, t7]
+
+#=> #RDF.Description{subject: ~I<urn:isbn:978-1-68050-252-7>
+         ~I<http://purl.org/dc/elements/1.1/creator>
+             ~I<https://twitter.com/bgmarx>
+             ~I<https://twitter.com/josevalim>
+             ~I<https://twitter.com/redrapids>
+         ~I<http://purl.org/dc/elements/1.1/date>
+             %RDF.Literal{value: ~D[2018-03-14],
+                datatype: ~I<http://www.w3.org/2001/XMLSchema#date>}
+         ~I<http://purl.org/dc/elements/1.1/format>
+             ~L"Paper"
+         ~I<http://purl.org/dc/elements/1.1/publisher>
+             ~I<https://pragprog.com/>
+         ~I<http://purl.org/dc/elements/1.1/title>
+             ~L"Adopting Elixir"en
+         ~I<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+             ~I<http://purl.org/ontology/bibo/Book>}
+```
+
 ### 5 November 2018 by Oleg G.Kapranov
 
 [1]: https://www.w3.org/TR/rdf11-primer/
