@@ -708,6 +708,41 @@ iex> RDF.Description.new [t0, t1, t2, t3, t4, t5, t6, t7]
              ~I<http://purl.org/ontology/bibo/Book>}
 ```
 
+We can wrap this whole construction into a function which we'll call
+`book/1` and invoke with the argument `:with_triples` and we'll add that
+to the `TestVocab` module.
+
+```elixir
+# lib/test_vocab.ex
+
+## book function defintions
+
+def book(:with_triples) do
+
+  alias RDF.NS.{XSD}
+
+  s = RDF.iri("urn:isbn:978-1-68050-252-7")
+
+  t0 = {s, RDF.type, RDF.iri(BIBO.Book)}
+  t1 = {s, DC.creator, RDF.iri("https://twitter.com/bgmarx")}
+  t2 = {s, DC.creator, RDF.iri("https://twitter.com/josevalim")}
+  t3 = {s, DC.creator, RDF.iri("https://twitter.com/redrapids")}
+  t4 = {s, DC.date, RDF.literal("2018-03-14", datatype: XSD.date)}
+  t5 = {s, DC.format, RDF.literal("Paper")}
+  t6 = {s, DC.publisher, RDF.iri("https://pragprog.com/")}
+  t7 = {s, DC.title, RDF.literal("Adopting Elixir", language: "en")}
+
+  RDF.Description.new [t0, t1, t2, t3, t4, t5, t6, t7]
+
+end
+```
+
+Note that for explicitness we'll use the fully qualified names `RDF.iri`
+and `RDF.literal`.
+
+## Short form with piped function calls
+
+
 ### 5 November 2018 by Oleg G.Kapranov
 
 [1]: https://www.w3.org/TR/rdf11-primer/
