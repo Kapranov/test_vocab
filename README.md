@@ -83,6 +83,10 @@ Example 1: Sample triples (informal)
 ```
 ## Create a `TestVocab` project
 
+First off, let's create a new project `TestVocab` (in camel case) using
+the usual Mix build tool invocation (in snake case): `mix new test_vocab`
+We'll then declare a dependency on `RDF.ex` in the `mix.exs` file:
+
 ```bash
 mkdir test_vocab
 cd test_vocab
@@ -233,6 +237,14 @@ all: test credo report start
 make start
 ```
 
+I won't give any detailed introduction to `RDX.ex` here but will focus
+here on one particular aspect – the support for RDF vocabularies. The
+distribution ships with five vocabularies (`RDF`, `RDFS`, `OWL`, `SKOS`,
+and `XSD`) already included. But it should be pretty simple to add in
+some new vocabularies, for example `DC` and `BIBO`.
+
+Let's see how we might do this.
+
 ## An implementation of RDF for Elixir
 
 ```bash
@@ -324,13 +336,62 @@ iex> EX.Foo |> EX.bar(EX.Baz)
       ~I<http://www.example.com/ns/Baz>}
 ```
 
-I won't give any detailed introduction to `RDX.ex` here but will focus
-here on one particular aspect – the support for RDF vocabularies. The
-distribution ships with five vocabularies (`RDF`, `RDFS`, `OWL`, `SKOS`,
-and `XSD`) already included. But it should be pretty simple to add in
-some new vocabularies, for example `DC` and `BIBO`.
+## Add a new vocabulary for `DC` elements
 
-Let's see how we might do this.
+Now let's look first at the core DC elements vocabulary as this is very
+simple: 15 properties only. In fact, with this small a number we can
+easily list these out by hand. We'll make some changes to our main
+module `TestVocab` which is defined in the usual `lib/test_vocab.ex`
+location. Specifically, we'll remove the standard boilerplate and add a
+`use` declaration, and also a `defvocab`  definition block for `DC`.
+We also include a `@moduledoc` attribute for documentation purposes.
+
+```elixir
+# lib/test_vocab.ex
+defmodule TestVocab do
+  @moduledoc """
+  Test module used in "Early steps in Elixir and RDF"
+  """
+
+  use RDF.Vocabulary.Namespace
+
+  defvocab DC,
+    base_iri: "http://purl.org/dc/elements/1.1/",
+    terms: ~w[
+      contributor coverage creator date description format
+      identifier language publisher relation rights source
+      subject title type
+    ]
+end
+```
+Note that in the `defvocab` definition block we have two keywords:
+`base_iri` which is a string specifying the base IRI for the vocabulary,
+and `terms` which takes a word list of the vocabulary terms.
+Let's try this out in Elixir shell `make all`:
+
+```bash
+iex> alias TestVocab.DC
+#=> TestVocab.DC
+
+iex> DC.type
+#=> ~I<http://purl.org/dc/elements/1.1/type>
+
+iex> DC.format
+#=> ~I<http://purl.org/dc/elements/1.1/format>
+
+iex> i DC.type
+
+iex> DC.type.value
+#=> "http://purl.org/dc/elements/1.1/type"
+```
+
+So, there we have it, a very simple means of generating RDF IRIs in the
+DC namespace. Note that `RDF.ex` maintains IRIs as Elixir structs as we
+can see by using the `i` helper in IEx: `i DC.type`.
+
+The `~I` sigil is used to provide a simple string representation for the
+IRI struct. We can access the IRI string by using the `value` field of
+the struct.
 
 ### 5 November 2018 by Oleg G.Kapranov
 
