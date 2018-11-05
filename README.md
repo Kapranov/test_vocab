@@ -456,6 +456,139 @@ iex> DC.__terms__
      :rights, :source, :subject, :title, :type]
 ```
 
+## Add new vocabularies for `BIBO` ontology
+
+Now let's try something more ambitious – the BIBO ontology. This term
+set has both classes and properties and also spans multiple namespaces.
+For this term set we will read the RDF file `bibo.ttl` in `priv/vocabs/`
+and add in these vocabulary definitions to our `lib/test_vocab.ex` file:
+
+```elixir
+defmodule TestVocab do
+  @moduledoc """
+  Test module used in "Early steps in Elixir and RDF"
+  """
+
+  use RDF.Vocabulary.Namespace
+
+  ## vocabulary defintions
+
+  # DC namespaces
+
+  defvocab DC,
+    base_iri: "http://purl.org/dc/elements/1.1/",
+    file: "dc.ttl"
+
+  # BIBO namespaces
+
+  defvocab BIBO,
+    base_iri: "http://purl.org/ontology/bibo/",
+    file: "bibo.ttl",
+    case_violations: :ignore
+
+  defvocab DCTERMS,
+    base_iri: "http://purl.org/dc/terms/",
+    file: "bibo.ttl",
+    case_violations: :ignore
+
+  defvocab EVENT,
+    base_iri: "http://purl.org/NET/c4dm/event.owl#",
+    file: "bibo.ttl"
+
+  defvocab FOAF,
+    base_iri: "http://xmlns.com/foaf/0.1/",
+    file: "bibo.ttl"
+
+  defvocab PRISM,
+    base_iri: "http://prismstandard.org/namespaces/1.2/basic/",
+    file: "bibo.ttl"
+
+  defvocab SCHEMA,
+    base_iri: "http://schemas.talis.com/2005/address/schema#",
+    file: "bibo.ttl"
+
+  defvocab STATUS,
+    base_iri: "http://purl.org/ontology/bibo/status/",
+    file: "bibo.ttl",
+    case_violations: :ignore
+end
+```
+Now when we recompile this by opening IEx again (or by using the
+`recompile` command), we'll  see some warnings. For the purposes
+of this tutorial let's just ignore this validation behaviour for
+now by setting the `case_violations` option to `:ignore` for
+these namespaces.
+
+```
+defvocab BIBO,
+  base_iri: "http://purl.org/ontology/bibo/",
+  file: "bibo.ttl",
+  case_violations: :ignore
+
+defvocab DCTERMS,
+  base_iri: "http://purl.org/dc/terms/",
+  file: "bibo.ttl",
+  case_violations: :ignore
+
+...
+
+defvocab STATUS,
+  base_iri: "http://purl.org/ontology/bibo/status/",
+  file: "bibo.ttl",
+  case_violations: :ignore
+```
+If we now reopen IEx we can try out the new vocabularies. We'll
+first alias the namespaces so we can use project unqualified names.
+
+```bash
+bash> make all
+
+...
+Compiler.spawn_workers/6
+Compiling 1 file (.ex)
+Compiling vocabulary namespace for http://purl.org/dc/elements/1.1/
+Compiling vocabulary namespace for http://purl.org/ontology/bibo/
+Compiling vocabulary namespace for http://purl.org/dc/terms/
+Compiling vocabulary namespace for http://purl.org/NET/c4dm/event.owl#
+Compiling vocabulary namespace for http://xmlns.com/foaf/0.1/
+Compiling vocabulary namespace for http://prismstandard.org/namespaces/1.2/basic/
+Compiling vocabulary namespace for http://schemas.talis.com/2005/address/schema#
+Compiling vocabulary namespace for http://purl.org/ontology/bibo/status/
+
+iex> alias TestVocab.{DC, BIBO, DCTERMS, EVENT, FOAF, PRISM, SCHEMA STATUS}
+#=> [TestVocab.DC, TestVocab.BIBO, TestVocab.DCTERMS, TestVocab.EVENT,
+     TestVocab.FOAF, TestVocab.PRISM, TestVocab.SCHEMA, TestVocab.STATUS]
+
+iex> FOAF.family_name
+#=> ~I<http://xmlns.com/foaf/0.1/family_name>
+
+iex> DCTERMS.isVersionOf
+#=> ~I<http://purl.org/dc/terms/isVersionOf>
+
+iex> BIBO.editor
+#=> ~I<http://purl.org/ontology/bibo/editor>
+
+iex> PRISM.doi
+#=> ~I<http://prismstandard.org/namespaces/1.2/basic/doi>
+```
+
+Looks good so far for these properties.
+
+Now classes behave a little differently. They do not resolve directly
+to IRIs as properties do but can be made to resolve using the `RDF.iri`
+function. They are, however, allowed by `RDF.ex` in any place that an
+IRI is expected.
+
+```bash
+iex> BIBO.Book
+#=> TestVocab.BIBO.Book
+
+iex> RDF.iri(BIBO.Book)
+#=> ~I<http://purl.org/ontology/bibo/Book>
+
+iex> i BIBO.Book
+```
+
 ### 5 November 2018 by Oleg G.Kapranov
 
 [1]: https://www.w3.org/TR/rdf11-primer/
