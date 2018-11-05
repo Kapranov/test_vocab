@@ -838,11 +838,11 @@ defmodule TestVocab do
 
   # ...
 
-  def book(_arg) do
-    raise "! Error: Usage is book( :with_triples | :with_pipes )"
+  def book(arg) do
+    raise "! Error: Usage is book( :with_triples | :with_pipes ) with #{arg}"
   end
 
-  def book(), do: book(:with_pipes)
+  def book, do: book(:with_pipes)
 end
 ```
 
@@ -851,12 +851,31 @@ block form and a keyword form.
 
 ## Serializing the RDF description
 
-There are various options for reading and writing the RDF description as
-a string or as a file. See the documentation for `RDF.Serialization`.
+There are various options for reading and writing the [RDF description][4]
+as a string or as a file. See the documentation for `RDF.Serialization`.
 But the simplest solution for serializing in Turtle format are the
 `RDF.Turtle` module functions.
 
-So, we can write the RDF description to `stdout` as a Turtle string as
+So, we can write the RDF description to stdout as a Turtle string as
+follows:
+
+```elixir
+bash> make all
+
+iex> RDF.Turtle.write_string!(book) |> IO.puts
+iex(1)> RDF.Turtle.write_string!(book) |> IO.puts
+#=> <urn:isbn:978-1-68050-252-7>
+      a <http://purl.org/ontology/bibo/Book> ;
+      <http://purl.org/dc/elements/1.1/creator> <https://twitter.com/bgmarx>,
+        <https://twitter.com/josevalim>, <https://twitter.com/redrapids> ;
+      <http://purl.org/dc/elements/1.1/date>"2018-03-14"^^<http://www.w3.org/2001/XMLSchema#date> ;
+      <http://purl.org/dc/elements/1.1/format> "Paper" ;
+      <http://purl.org/dc/elements/1.1/publisher> <https://pragprog.com/>;
+      <http://purl.org/dc/elements/1.1/title> "Adopting Elixir"@en .
+    :ok
+```
+
+I've shown here a simple use case demonstrating how the `RDF.ex` package
 can be used for working with the RDF data model in Elixir.
 
 Specifically we've used `RDF.ex` to define a set of RDF vocabularies for
@@ -875,5 +894,6 @@ involved, and 2) better management of distributed compute solutions.
 
 [1]: https://www.w3.org/TR/rdf11-primer/
 [2]: https://github.com/marcelotto/rdf-ex
-[3]: https://medium.com/@tonyhammond/early-steps-in-elixir-and-rdf-5078a4ebfe0f
-[4]: https://github.com/tonyhammond/examples/tree/master/test_vocab
+[3]: https://hexdocs.pm/rdf/RDF.Serialization.html
+[4]: https://medium.com/@tonyhammond/early-steps-in-elixir-and-rdf-5078a4ebfe0f
+[5]: https://github.com/tonyhammond/examples/tree/master/test_vocab

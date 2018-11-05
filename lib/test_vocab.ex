@@ -76,9 +76,10 @@ defmodule TestVocab do
     |> DC.title(~L"Adopting Elixir"en)
   end
 
-  def book(_arg) do
-    raise "! Error: Usage is book( :with_triples | :with_pipes )"
+  def book(arg) do
+    raise "! Error: Usage is book( :with_triples | :with_pipes ) with #{arg}"
   end
 
-  def book(), do: book(:with_pipes)
+  # credo:disable-for-next-line
+  def book, do: book(:with_pipes)
 end
