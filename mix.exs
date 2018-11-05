@@ -31,6 +31,7 @@ defmodule TestVocab.MixProject do
       {:excoveralls, "~> 0.10.1", only: :test},
       {:ex_unit_notifier, "~> 0.1.4", only: :test},
       {:mix_test_watch, "~> 0.9.0", only: :dev, runtime: false},
+      {:rdf, "~> 0.5.1"},
       {:remix, "~> 0.0.2", only: :dev}
     ]
   end
