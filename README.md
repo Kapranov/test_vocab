@@ -714,26 +714,33 @@ to the `TestVocab` module.
 
 ```elixir
 # lib/test_vocab.ex
+defmodule TestVocab do
+  @moduledoc """
+  Test module used in "Early steps in Elixir and RDF"
+  """
 
-## book function defintions
+  # ...
 
-def book(:with_triples) do
+  ## book function defintions
 
-  alias RDF.NS.{XSD}
+  def book(:with_triples) do
 
-  s = RDF.iri("urn:isbn:978-1-68050-252-7")
+    alias RDF.NS.{XSD}
 
-  t0 = {s, RDF.type, RDF.iri(BIBO.Book)}
-  t1 = {s, DC.creator, RDF.iri("https://twitter.com/bgmarx")}
-  t2 = {s, DC.creator, RDF.iri("https://twitter.com/josevalim")}
-  t3 = {s, DC.creator, RDF.iri("https://twitter.com/redrapids")}
-  t4 = {s, DC.date, RDF.literal("2018-03-14", datatype: XSD.date)}
-  t5 = {s, DC.format, RDF.literal("Paper")}
-  t6 = {s, DC.publisher, RDF.iri("https://pragprog.com/")}
-  t7 = {s, DC.title, RDF.literal("Adopting Elixir", language: "en")}
+    s = RDF.iri("urn:isbn:978-1-68050-252-7")
 
-  RDF.Description.new [t0, t1, t2, t3, t4, t5, t6, t7]
+    t0 = {s, RDF.type, RDF.iri(BIBO.Book)}
+    t1 = {s, DC.creator, RDF.iri("https://twitter.com/bgmarx")}
+    t2 = {s, DC.creator, RDF.iri("https://twitter.com/josevalim")}
+    t3 = {s, DC.creator, RDF.iri("https://twitter.com/redrapids")}
+    t4 = {s, DC.date, RDF.literal("2018-03-14", datatype: XSD.date)}
+    t5 = {s, DC.format, RDF.literal("Paper")}
+    t6 = {s, DC.publisher, RDF.iri("https://pragprog.com/")}
+    t7 = {s, DC.title, RDF.literal("Adopting Elixir", language: "en")}
 
+    RDF.Description.new [t0, t1, t2, t3, t4, t5, t6, t7]
+
+  end
 end
 ```
 
@@ -742,6 +749,127 @@ and `RDF.literal`.
 
 ## Short form with piped function calls
 
+OK, so let's now show how we might do this in a more natural Elixir
+style. Here we make use of two `RDF.ex` features: sigils for RDF terms,
+and variant property function calls which implement a description
+builder style. And to glue it all together, the Elixir pipe operator
+`|>`.
+
+We can show this construction style also using the function `book/1` but
+invoked with the argument `:with_pipes` and we'll also that add to the
+`TestVocab` module.
+
+```elixir
+defmodule TestVocab do
+  @moduledoc """
+  Test module used in "Early steps in Elixir and RDF"
+  """
+
+  # ...
+
+  def book(:with_pipes) do
+    import RDF.Sigils
+
+    ~I<urn:isbn:978-1-68050-252-7>
+    |> RDF.type(BIBO.Book)
+    |> DC.creator(~I<https://twitter.com/bgmarx>,
+                  ~I<https://twitter.com/josevalim>,
+                  ~I<https://twitter.com/redrapids>)
+    |> DC.date(RDF.date("2018-03-14"))
+    |> DC.format(~L"Paper")
+    |> DC.publisher(~I<https://pragprog.com/>)
+    |> DC.title(~L"Adopting Elixir"en)
+  end
+end
+```
+
+So, briefly we can construct new RDF terms using the sigils defined in
+the `RDF.Sigils` module (which we import):
+
+* `~I` for IRIs, e.g. `~I<urn:isbn:978–1–68050–252–7>`
+* `~L` for literals, e.g. `~L"Paper"` for a plain string, and
+  `~L"Adopting Elixir"en` for a language tagged string (with no `@` sign)
+* `~B` for blank nodes, e.g. `~B<foo>`
+
+Note that there is no sigil form for datatyped literals and instead we
+make use of convenience RDF functions (here `RDF.date/1` for
+`"2018–03–14"`).
+
+The property functions we used earlier took no arguments and just
+returned the property IRI as an `RDF.IRI` struct. But there are also
+property functions with the same name but taking multiple arguments
+(between 2 and 6 arguments) for RDF subject and RDF object(s). The
+2-argument form expects an RDF subject and a single RDF object and
+returns an `RDF.Description` struct.
+
+```bash
+iex> import RDF.Sigils
+iex> DC.format(~I<urn:isbn:978–1–68050–252–7>, ~L"Paper")
+#=> #RDF.Description{subject: ~I<urn:isbn:978–1–68050–252–7>
+         ~I<http://purl.org/dc/elements/1.1/format>
+             ~L"Paper"}
+```
+
+In our function `book(:with_pipes)` there's an example of a 4-argument
+function call for `DC.creator`. The first argument is the RDF subject
+and subsequent arguments are for RDF objects.
+
+And that leaves that essential piece of plumbing, the Elixir pipe
+operator `|>`. This takes an Elixir expression and passes it along
+as the first argument to the next function call. Elixir functions
+are usually arranged to expect the first argument to be piped in
+thus allowing for chains of function calls to be built up.
+
+Now we can call the two constructions directly using the separate
+function clauses `book(:with_triples)` and `book(:with_pipes)`.
+And to generalize we can add the further function clause `book(arg)`
+which just takes a single argument `arg` and raises an error with a help
+message. Note, however, that if either of the keywords `:with_triples`
+or `:with_pipes` are used the previously defined function clauses will
+be invoked instead. To keep things simple we'll also define a function
+form `book/0` taking no arguments but silently selecting for one of the
+construction functions.
+
+```elixir
+defmodule TestVocab do
+  @moduledoc """
+  Test module used in "Early steps in Elixir and RDF"
+  """
+
+  # ...
+
+  def book(_arg) do
+    raise "! Error: Usage is book( :with_triples | :with_pipes )"
+  end
+
+  def book(), do: book(:with_pipes)
+end
+```
+
+Note that this fragment shows the two forms for defining a function, a
+block form and a keyword form.
+
+## Serializing the RDF description
+
+There are various options for reading and writing the RDF description as
+a string or as a file. See the documentation for `RDF.Serialization`.
+But the simplest solution for serializing in Turtle format are the
+`RDF.Turtle` module functions.
+
+So, we can write the RDF description to `stdout` as a Turtle string as
+can be used for working with the RDF data model in Elixir.
+
+Specifically we've used `RDF.ex` to define a set of RDF vocabularies for
+two schemas (`DC` and `BIBO`). We've also used these vocabularies to
+build a simple RDF description for a book resource and shown how to
+serialize this.
+
+But it was more by way of providing the briefest of introductions into
+how Elixir can be used for RDF processing. The real interest, however,
+in using Elixir for semantic web applications, beyond any functional
+programming best practice, is ultimately two fold: 1) fault tolerant
+processing, especially where networks and federated queries are
+involved, and 2) better management of distributed compute solutions.
 
 ### 5 November 2018 by Oleg G.Kapranov
 

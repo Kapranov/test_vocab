@@ -5,6 +5,8 @@ defmodule TestVocab do
 
   use RDF.Vocabulary.Namespace
 
+  alias RDF.Description
+
   defvocab DC,
     base_iri: "http://purl.org/dc/elements/1.1/",
     file: "dc.ttl"
@@ -55,7 +57,28 @@ defmodule TestVocab do
     t6 = {s, DC.publisher, RDF.iri("https://pragprog.com/")}
     t7 = {s, DC.title, RDF.literal("Adopting Elixir", language: "en")}
 
-    RDF.Description.new [t0, t1, t2, t3, t4, t5, t6, t7]
+    Description.new [t0, t1, t2, t3, t4, t5, t6, t7]
 
   end
+
+  def book(:with_pipes) do
+
+    import RDF.Sigils
+
+    ~I<urn:isbn:978-1-68050-252-7>
+    |> RDF.type(BIBO.Book)
+    |> DC.creator(~I<https://twitter.com/bgmarx>,
+                  ~I<https://twitter.com/josevalim>,
+                  ~I<https://twitter.com/redrapids>)
+    |> DC.date(RDF.date("2018-03-14"))
+    |> DC.format(~L"Paper")
+    |> DC.publisher(~I<https://pragprog.com/>)
+    |> DC.title(~L"Adopting Elixir"en)
+  end
+
+  def book(_arg) do
+    raise "! Error: Usage is book( :with_triples | :with_pipes )"
+  end
+
+  def book(), do: book(:with_pipes)
 end
